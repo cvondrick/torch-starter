@@ -1,0 +1,115 @@
+--[[
+    Copyright (c) 2015-present, Facebook, Inc.
+    All rights reserved.
+
+    This source code is licensed under the BSD-style license found in the
+    LICENSE file in the root directory of this source tree. An additional grant
+    of patent rights can be found in the PATENTS file in the same directory.
+]]--
+
+-- Heavily moidifed by Carl to make it simpler
+
+require 'torch'
+require 'image'
+tds = require 'tds'
+torch.setdefaulttensortype('torch.FloatTensor')
+local class = require('pl.class')
+
+local dataset = torch.class('dataLoader')
+
+function dataset:__init(args)
+  print(args)
+  for k,v in pairs(args) do self[k] = v end
+
+  -- we are going to read args.data_list
+  -- we split on the tab
+  self.data = tds.Vec()
+  self.label = tds.Vec()
+  for line in io.lines(args.data_list) do 
+    local split = {}
+    for k in string.gmatch(line, "%S+") do table.insert(split, k) end
+    split[2] = tonumber(split[2])
+    if split[2] ~= nil then 
+      self.data:insert(split[1])
+      self.label:insert(split[2])
+    end
+  end
+
+  print('found ' .. #self.data .. ' items')
+end
+
+function dataset:size()
+  return #self.data
+end
+
+-- converts a table of samples (and corresponding labels) to a clean tensor
+function dataset:tableToOutput(dataTable, scalarTable)
+   local data, scalarLabels, labels
+   local quantity = #scalarTable
+   assert(dataTable[1]:dim() == 3)
+   data = torch.Tensor(quantity, 3, self.fineSize, self.fineSize)
+   scalarLabels = torch.LongTensor(quantity):fill(-1111)
+   for i=1,#dataTable do
+      data[i]:copy(dataTable[i])
+      scalarLabels[i] = scalarTable[i]
+   end
+   return data, scalarLabels
+end
+
+-- function to load the image, jitter it appropriately (random crops etc.)
+function dataset:trainHook(path)
+   collectgarbage()
+   local input = self:loadImage(path)
+   local iW = input:size(3)
+   local iH = input:size(2)
+
+   -- do random crop
+   local oW = self.fineSize
+   local oH = self.fineSize 
+   local h1 = math.ceil(torch.uniform(1e-2, iH-oH))
+   local w1 = math.ceil(torch.uniform(1e-2, iW-oW))
+   local out = image.crop(input, w1, h1, w1 + oW, h1 + oH)
+   assert(out:size(2) == oW)
+   assert(out:size(3) == oH)
+   -- do hflip with probability 0.5
+   if torch.uniform() > 0.5 then out = image.hflip(out); end
+   out:mul(2):add(-1) -- make it [0, 1] -> [-1, 1]
+   return out
+end
+
+-- sampler, samples from the training set.
+function dataset:sample(quantity)
+   assert(quantity)
+   local dataTable = {}
+   local labelTable = {}
+   for i=1,quantity do
+      local idx = torch.random(1, #self.data)
+      local data_path = self.data_root .. '/' .. self.data[idx]
+      local data_label = self.label[idx]
+
+      local out = self:trainHook(data_path) 
+      table.insert(dataTable, out)
+      table.insert(labelTable, data_label)
+   end
+   return self:tableToOutput(dataTable,labelTable)
+end
+
+function dataset:loadImage(path)
+  local ok,input = pcall(image.load, path, 3, 'float') 
+  if not ok then
+     print('warning: failed loading: ' .. path)
+     input = torch.zeros(3, opt.loadSize, opt.loadSize) 
+  else
+    local iW = input:size(3)
+    local iH = input:size(2)
+    if iW < iH then
+        input = image.scale(input, opt.loadSize, opt.loadSize * iH / iW)
+    else
+        input = image.scale(input, opt.loadSize * iW / iH, opt.loadSize) 
+    end
+  end
+  return input
+end
+
+-- data.lua expects a variable called trainLoader
+trainLoader = dataLoader(opt)

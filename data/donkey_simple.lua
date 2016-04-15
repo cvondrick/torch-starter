@@ -43,7 +43,7 @@ function dataset:size()
 end
 
 -- converts a table of samples (and corresponding labels) to a clean tensor
-function dataset:tableToOutput(dataTable, scalarTable)
+function dataset:tableToOutput(dataTable, scalarTable, extraTable)
    local data, scalarLabels, labels
    local quantity = #scalarTable
    assert(dataTable[1]:dim() == 3)
@@ -53,7 +53,7 @@ function dataset:tableToOutput(dataTable, scalarTable)
       data[i]:copy(dataTable[i])
       scalarLabels[i] = scalarTable[i]
    end
-   return data, scalarLabels
+   return data, scalarLabels, extraTable
 end
 
 -- function to load the image, jitter it appropriately (random crops etc.)
@@ -82,6 +82,7 @@ function dataset:sample(quantity)
    assert(quantity)
    local dataTable = {}
    local labelTable = {}
+   local extraTable = {}
    for i=1,quantity do
       local idx = torch.random(1, #self.data)
       local data_path = self.data_root .. '/' .. self.data[idx]
@@ -90,8 +91,33 @@ function dataset:sample(quantity)
       local out = self:trainHook(data_path) 
       table.insert(dataTable, out)
       table.insert(labelTable, data_label)
+      table.insert(extraTable, self.data[idx])
    end
-   return self:tableToOutput(dataTable,labelTable)
+   return self:tableToOutput(dataTable,labelTable,extraTable)
+end
+
+-- gets data in a certain range
+function dataset:get(start_idx,stop_idx)
+   assert(start_idx)
+   assert(stop_idx)
+   assert(start_idx<stop_idx)
+   assert(start_idx<=#self.data)
+   local dataTable = {}
+   local labelTable = {}
+   local extraTable = {}
+   for idx=start_idx,stop_idx do
+      if idx > #self.data then
+        break
+      end
+      local data_path = self.data_root .. '/' .. self.data[idx]
+      local data_label = self.label[idx]
+
+      local out = self:trainHook(data_path) 
+      table.insert(dataTable, out)
+      table.insert(labelTable, data_label)
+      table.insert(extraTable, self.data[idx])
+   end
+   return self:tableToOutput(dataTable,labelTable,extraTable)
 end
 
 function dataset:loadImage(path)

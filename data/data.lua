@@ -13,6 +13,12 @@ function data.new(n, dataset_name, opt_)
       self[k] = v
    end
 
+   if opt_.randomize == nil then
+     self.randomize = true
+   else
+     self.randomize = opt_.randomize
+   end
+
    local donkey_file
    if dataset_name == 'simple' then
        donkey_file = 'donkey_simple.lua'
@@ -51,17 +57,32 @@ function data.new(n, dataset_name, opt_)
    self.threads:synchronize()
    self._size = nSamples
 
+   self.jobCount = 0
    for i = 1, n do
-      self.threads:addjob(self._getFromThreads,
-                          self._pushResult)
+      self:queueJob()
    end
 
    return self
 end
 
-function data._getFromThreads()
-   assert(opt.batchSize, 'opt.batchSize not found')
-   return trainLoader:sample(opt.batchSize)
+function data:queueJob()
+  self.jobCount = self.jobCount + 1
+
+  if self.randomize then
+    self.threads:addjob(function()
+                          return trainLoader:sample(opt.batchSize)
+                        end,
+                        self._pushResult)
+  else
+    local indexStart = (self.jobCount-1) * opt.batchSize + 1
+    local indexEnd = (indexStart + opt.batchSize - 1)
+    if indexEnd <= self:size() then
+      self.threads:addjob(function()
+                            return trainLoader:get(indexStart, indexEnd)
+                          end,
+                          self._pushResult)
+    end
+  end
 end
 
 function data._pushResult(...)
@@ -76,7 +97,7 @@ function data:getBatch()
    -- queue another job
    local res
    repeat 
-      self.threads:addjob(self._getFromThreads, self._pushResult)
+      self:queueJob()
       self.threads:dojob()
       res = result[1]
       result[1] = nil

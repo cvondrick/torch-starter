@@ -2,6 +2,8 @@ require 'torch'
 require 'nn'
 require 'optim'
 
+-- to specify these at runtime, you can do, e.g.:
+--    $ dataset=simple lr=0.001 th main.lua
 opt = {
   dataset = 'simple',
   nThreads = 16,
@@ -43,7 +45,7 @@ print("Dataset: " .. opt.dataset, " Size: ", data:size())
 
 -- define the model
 local net
-if opt.finetune == '' then
+if opt.finetune == '' then -- build network from scratch
   net = nn.Sequential()
   net:add(nn.SpatialConvolution(3,64,11,11,4,4,2,2))       -- 224 -> 55
   net:add(nn.SpatialBatchNormalization(64,1e-3))
@@ -86,7 +88,8 @@ if opt.finetune == '' then
     end
   end
   net:apply(weights_init)
-else
+
+else -- load in existing network
   print('loading ' .. opt.fineTune)
   net = torch.load(opt.finetune)
 end
@@ -139,7 +142,7 @@ local fx = function(x)
   local df_do = criterion:backward(output, label)
   net:backward(input, df_do)
   
-  -- get parameters
+  -- return gradients
   return err, gradParameters
 end
 
@@ -181,6 +184,8 @@ for epoch = 1,opt.niter do
             err and err or -1))
   end
   
+  -- save checkpoint
+  -- :clearState() compacts the model so it takes less space on disk
   paths.mkdir('checkpoints')
   torch.save('checkpoints/' .. opt.name .. '_' .. epoch .. '_net.t7', net:clearState())
   torch.save('checkpoints/' .. opt.name .. '_' .. epoch .. '_optim.t7', optimState)

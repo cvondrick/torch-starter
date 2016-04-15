@@ -17,12 +17,14 @@ local class = require('pl.class')
 
 local dataset = torch.class('dataLoader')
 
+-- this function reads in the data files
 function dataset:__init(args)
   print(args)
   for k,v in pairs(args) do self[k] = v end
 
   -- we are going to read args.data_list
   -- we split on the tab
+  -- we use tds.Vec() because they have no memory constraint 
   self.data = tds.Vec()
   self.label = tds.Vec()
   for line in io.lines(args.data_list) do 
@@ -56,28 +58,7 @@ function dataset:tableToOutput(dataTable, scalarTable, extraTable)
    return data, scalarLabels, extraTable
 end
 
--- function to load the image, jitter it appropriately (random crops etc.)
-function dataset:trainHook(path)
-   collectgarbage()
-   local input = self:loadImage(path)
-   local iW = input:size(3)
-   local iH = input:size(2)
-
-   -- do random crop
-   local oW = self.fineSize
-   local oH = self.fineSize 
-   local h1 = math.ceil(torch.uniform(1e-2, iH-oH))
-   local w1 = math.ceil(torch.uniform(1e-2, iW-oW))
-   local out = image.crop(input, w1, h1, w1 + oW, h1 + oH)
-   assert(out:size(2) == oW)
-   assert(out:size(3) == oH)
-   -- do hflip with probability 0.5
-   if torch.uniform() > 0.5 then out = image.hflip(out); end
-   out:mul(2):add(-1) -- make it [0, 1] -> [-1, 1]
-   return out
-end
-
--- sampler, samples from the training set.
+-- sampler, samples with replacement from the training set.
 function dataset:sample(quantity)
    assert(quantity)
    local dataTable = {}
@@ -120,6 +101,31 @@ function dataset:get(start_idx,stop_idx)
    return self:tableToOutput(dataTable,labelTable,extraTable)
 end
 
+-- function to load the image, jitter it appropriately (random crops etc.)
+function dataset:trainHook(path)
+   collectgarbage()
+   local input = self:loadImage(path)
+   local iW = input:size(3)
+   local iH = input:size(2)
+
+   -- do random crop
+   local oW = self.fineSize
+   local oH = self.fineSize 
+   local h1 = math.ceil(torch.uniform(1e-2, iH-oH))
+   local w1 = math.ceil(torch.uniform(1e-2, iW-oW))
+   local out = image.crop(input, w1, h1, w1 + oW, h1 + oH)
+   assert(out:size(2) == oW)
+   assert(out:size(3) == oH)
+   -- do hflip with probability 0.5
+   if torch.uniform() > 0.5 then out = image.hflip(out); end
+   out:mul(2):add(-1) -- make it [0, 1] -> [-1, 1]
+   return out
+end
+
+-- reads an image disk
+-- if it fails to read the image, it will use a blank image
+-- and write to stdout about the failure
+-- this means the program will not crash if there is an occassional bad apple
 function dataset:loadImage(path)
   local ok,input = pcall(image.load, path, 3, 'float') 
   if not ok then

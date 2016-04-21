@@ -16,8 +16,7 @@ Installation is fairly simple. You need to install:
 - [tds](https://github.com/torch/tds)
 - [display](https://github.com/szym/display) (optional)
 
-Resources
----------
+### Learning Resources
 - [Torch Cheat Sheet](https://github.com/torch/torch7/wiki/Cheatsheet)
 - [60 minute blitz](https://github.com/soumith/cvpr2015/blob/master/Deep%20Learning%20with%20Torch.ipynb)
 

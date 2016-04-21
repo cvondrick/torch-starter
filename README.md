@@ -5,7 +5,7 @@ This is a simple Torch7 starter package. It can be used either as a educational 
 
 I pieced together this package largely from [Torch7 resources online](https://github.com/soumith/imagenet-multiGPU.torch). I mostly just copied the code, and stripped a lot of extra functionality out, to make it easier to hack on. 
 
-If something is not clear, or could be made more simple, please let me know. The goal is to be as simple.
+If something is not clear, or could be made more simple, please let me know. The goal is to be simple.
 
 Installation
 ------------

@@ -16,6 +16,19 @@ Installation is fairly simple. You need to install:
 - [tds](https://github.com/torch/tds)
 - [display](https://github.com/szym/display) (optional)
 
+You can install all of these with the commands:
+```bash
+# install torch first
+git clone https://github.com/torch/distro.git ~/torch --recursive
+cd ~/torch; bash install-deps;
+./install.sh
+
+# install libraries
+luarocks install cunn
+luarocks install tds
+luarocks install https://raw.githubusercontent.com/szym/display/master/display-scm-0.rockspec
+```
+
 ### Learning Resources
 - [Torch Cheat Sheet](https://github.com/torch/torch7/wiki/Cheatsheet)
 - [60 minute blitz](https://github.com/soumith/cvpr2015/blob/master/Deep%20Learning%20with%20Torch.ipynb)
@@ -38,9 +51,11 @@ After you create this file, open `main.lua` and change `data_list` to point to t
 
 Training
 --------
-Define your model in the `net` variable. By default, it is AlexNet. To learn more about the modules you can use, see [nn](https://github.com/torch/nn/blob/master/README.md)
+Define your model in the `net` variable. By default, it is AlexNet. To learn more about the modules you can use, see [nn](https://github.com/torch/nn/blob/master/README.md). You can also adjust your loss with the `criterion` variable. 
 
-Then, to start training, just do:
+Remember to also adjust any options in `opt`, such as the learning rate and the number of classes.
+
+Finally, to start training, just do:
 
 ```bash
 $ CUDA_VISIBLE_DEVICES=0 th main.lua

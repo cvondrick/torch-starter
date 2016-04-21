@@ -5,6 +5,8 @@ This is a simple Torch7 starter package. It can be used either as a educational 
 
 I pieced together this package largely from [Torch7 resources online](https://github.com/soumith/imagenet-multiGPU.torch). I mostly just copied the code, and stripped a lot of extra functionality out, to make it easier to hack on. 
 
+If something is not clear, or could be made more simple, please let me know. The goal is to be as simple.
+
 Installation
 ------------
 
@@ -14,9 +16,13 @@ Installation is fairly simple. You need to install:
 - [tds](https://github.com/torch/tds)
 - [display](https://github.com/szym/display) (optional)
 
+Resources
+---------
+- [Torch Cheat Sheet](https://github.com/torch/torch7/wiki/Cheatsheet)
+- [60 minute blitz](https://github.com/soumith/cvpr2015/blob/master/Deep%20Learning%20with%20Torch.ipynb)
+
 Data Setup 
 ----------
-
 By default, we assume you have a text file that lists your dataset. This text does not store your dataset; it just lists filepaths to it. Each line in this text file represents one training example. The syntax of the line should be: 
 ```
 <filename><tab><number>
@@ -51,9 +57,11 @@ To evaluate your model, you can use the `eval.lua` script. It mostly follows the
 MIT CSAIL Notes
 ----------------
 If you want to see graphics and the loss over time, in a different shell on the same machine, run this command:
-  $ th -ldisplay.start 8000 0.0.0.0
-then navigate to http://HOST.csail.mit.edu:8000 in your browser. Every 10th iteration it will
+```bash
+$ th -ldisplay.start 8000 0.0.0.0
+```
+then navigate to ```http://HOST.csail.mit.edu:8000``` in your browser. Every 10th iteration it will
 push graphs. 
 
-If you are at CSAIL, you can run this code out-of-the-box, and it will start to train
+On the CSAIL vision cluster, you can run this code out-of-the-box, and it will start to train
 AlexNet on the Places2 database. 

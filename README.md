@@ -1,32 +1,59 @@
-This is a simple Torch7 starter package. It can be used either as a educational
-tool or simplified kickoff point for a Torch project.
+Torch Starter
+=============
 
-This is pieced together with many awesome Torch7 resources online. I mostly
-just copied the code, and stripped a lot of extra functionality out, to make it
-easier to hack on.  
+This is a simple Torch7 starter package. It can be used either as a educational tool or simplified kickoff point for a Torch project.
 
-To use it, you just have to create a text file that lists images and a corresponding category.
-Each line in this text file represents one training example. The syntax of the line should be: 
+I pieced together this package largely from [Torch7 resources online](https://github.com/soumith/imagenet-multiGPU.torch). I mostly just copied the code, and stripped a lot of extra functionality out, to make it easier to hack on. 
 
-  <filename><tab><number>
-  
-Then, open main.lua and change data_list to point to this file. You can specify a data_root too, which will
-be prepended to each filename. 
+Installation
+------------
 
-Define your model in the `net' variable. By default, it is AlexNet.
+Installation is fairly simple. You need to install:
+- [Torch7](http://torch.ch/docs/getting-started.html#_)
+- [cunn](https://github.com/torch/cunn)
+- [tds](https://github.com/torch/tds)
+- [display](https://github.com/szym/display) (optional)
+
+Data Setup 
+----------
+
+By default, we assume you have a text file that lists your dataset. This text does not store your dataset; it just lists filepaths to it. Each line in this text file represents one training example. The syntax of the line should be: 
+```
+<filename><tab><number>
+```
+For example:
+```
+bedroom/IMG_050283.jpg    5
+office/IMG_838222.jpg     10
+```
+The `<number>` should start counting at 1.
+
+After you create this file, open `main.lua` and change `data_list` to point to this file. You can specify a `data_root` too, which will be prepended to each filename. 
+
+Training
+--------
+Define your model in the `net` variable. By default, it is AlexNet. To learn more about the modules you can use, see [nn](https://github.com/torch/nn/blob/master/README.md)
 
 Then, to start training, just do:
 
-  $ CUDA_VISIBLE_DEVICES=0 th main.lua
+```bash
+$ CUDA_VISIBLE_DEVICES=0 th main.lua
+```
+where you replace the number after `CUDA_VISIBLE_DEVICES` with the GPU you want to run on. 
+You can find which GPU to use with `$ nvidia-smi` on our GPU cluster. Note: this number is 0-indexed, unlike the rest of Torch!
 
-where you replace the number after CUDA_VISIBLE_DEVICES with the GPU you want to run on. 
-You can find which GPU to use with `$ nvidia-smi' on our GPU cluster.
+During training, it will dump snapshots to the `checkpoints/` directory every epoch. Each time you start a new experiment, you should change the `name` (in `opt`), to avoid overwriting previous experiments. The code will not warn you about this (to keep things simple).
 
-Note: If you want to see graphics and the loss over time, run this command on the same
-machine: 
+Evaluation
+----------
+To evaluate your model, you can use the `eval.lua` script. It mostly follows the same format as `main.lua`. It reads your validation/testing dataset from a file similar to before, and sequentially runs through it, calculating both the top-1 and top-5 accuracy. 
+
+MIT CSAIL Notes
+----------------
+If you want to see graphics and the loss over time, in a different shell on the same machine, run this command:
   $ th -ldisplay.start 8000 0.0.0.0
 then navigate to http://HOST.csail.mit.edu:8000 in your browser. Every 10th iteration it will
 push graphs. 
 
-Note: If you are at CSAIL, you can run this code out-of-the-box, and it will start to train
+If you are at CSAIL, you can run this code out-of-the-box, and it will start to train
 AlexNet on the Places2 database. 

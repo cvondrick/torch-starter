@@ -159,9 +159,9 @@ optimState = {
    beta1 = opt.beta1,
 }
 
--- train
-for epoch = 1,opt.niter do
-  for i = 1, math.min(data:size(), opt.ntrain), opt.batchSize do
+-- train main loop
+for epoch = 1,opt.niter do -- for each epoch
+  for i = 1, math.min(data:size(), opt.ntrain), opt.batchSize do -- for each mini-batch
     collectgarbage() -- necessary sometimes
     
     tm:reset()

@@ -5,22 +5,22 @@ require 'optim'
 -- to specify these at runtime, you can do, e.g.:
 --    $ dataset=simple lr=0.001 th main.lua
 opt = {
-  dataset = 'simple',
-  nThreads = 16,
-  batchSize = 100,
-  loadSize = 256,
-  fineSize = 224,
-  nClasses = 401,
-  lr = 0.001,
-  beta1 = 0.5,
-  niter = 100,
-  ntrain = math.huge,
-  gpu = 1,
-  finetune = '',
-  name = 'net1',
-  randomize = true,
-  display_port = 8000, 
-  display_id = 1, 
+  dataset = 'simple',   -- indicates what dataset load to use (in data.lua)
+  nThreads = 16,        -- how many threads to pre-fetch data
+  batchSize = 100,      -- self-explanatory
+  loadSize = 256,       -- when loading images, resize first to this size
+  fineSize = 224,       -- crop this size from the loaded image 
+  nClasses = 401,       -- number of category
+  lr = 0.001,           -- learning rate
+  beta1 = 0.5,          -- momentum term for adam
+  niter = 100,          -- number of iterations through dataset
+  ntrain = math.huge,   -- how big one epoch should be
+  gpu = 1,              -- which GPU to use; consider use CUDA_VISIBLE_DEVICES instead
+  finetune = '',        -- if set, will load this network instead of starting from scratch
+  name = 'net1',        -- the name of the experiment
+  randomize = true,     -- whether to shuffle the data file or not
+  display_port = 8000,  -- port to push graphs
+  display_id = 1,       -- window ID when pushing graphs
   data_root = '/data/vision/torralba/commonsense/places-resources/flat/',
   data_list = '/data/vision/torralba/commonsense/places-resources/flat/train_class.txt'
 }
@@ -33,6 +33,7 @@ torch.manualSeed(0)
 torch.setnumthreads(1)
 torch.setdefaulttensortype('torch.FloatTensor')
 
+-- if using GPU, select indicated one
 if opt.gpu > 0 then
   require 'cunn'
   cutorch.setDevice(opt.gpu)
@@ -76,7 +77,7 @@ if opt.finetune == '' then -- build network from scratch
   net:add(nn.ReLU())
   net:add(nn.Linear(4096, opt.nClasses))
 
-  ---- initialize the model
+  -- initialize the model
   local function weights_init(m)
     local name = torch.type(m)
     if name:find('Convolution') then
@@ -87,7 +88,7 @@ if opt.finetune == '' then -- build network from scratch
       if m.bias then m.bias:fill(0) end
     end
   end
-  net:apply(weights_init)
+  net:apply(weights_init) -- loop over all layers, applying weights_init
 
 else -- load in existing network
   print('loading ' .. opt.fineTune)
@@ -103,10 +104,11 @@ local input = torch.Tensor(opt.batchSize, 3, opt.fineSize, opt.fineSize)
 local label = torch.Tensor(opt.batchSize)
 local err
 
+-- timers to roughly profile performance
 local tm = torch.Timer()
 local data_tm = torch.Timer()
 
--- ship to GPU
+-- ship everything to GPU if needed
 if opt.gpu > 0 then
   input = input:cuda()
   label = label:cuda()
@@ -114,7 +116,7 @@ if opt.gpu > 0 then
   criterion:cuda()
 end
 
--- get parameters
+-- get a vector of parameters
 local parameters, gradParameters = net:getParameters()
 
 -- show graphics
@@ -160,7 +162,7 @@ optimState = {
 -- train
 for epoch = 1,opt.niter do
   for i = 1, math.min(data:size(), opt.ntrain), opt.batchSize do
-    collectgarbage()
+    collectgarbage() -- necessary sometimes
     
     tm:reset()
 

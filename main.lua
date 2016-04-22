@@ -12,6 +12,7 @@ opt = {
   fineSize = 224,       -- crop this size from the loaded image 
   nClasses = 401,       -- number of category
   lr = 0.001,           -- learning rate
+  lr_decay = 1,         -- how often to decay learning rate (in epoch's)
   beta1 = 0.5,          -- momentum term for adam
   niter = 100,          -- number of iterations through dataset
   ntrain = math.huge,   -- how big one epoch should be
@@ -81,7 +82,7 @@ if opt.finetune == '' then -- build network from scratch
   local function weights_init(m)
     local name = torch.type(m)
     if name:find('Convolution') then
-      m.weight:normal(0.0, 0.02)
+      m.weight:normal(0.0, 0.01)
       m.bias:fill(0)
     elseif name:find('BatchNormalization') then
       if m.weight then m.weight:normal(1.0, 0.02) end
@@ -91,7 +92,7 @@ if opt.finetune == '' then -- build network from scratch
   net:apply(weights_init) -- loop over all layers, applying weights_init
 
 else -- load in existing network
-  print('loading ' .. opt.fineTune)
+  print('loading ' .. opt.finetune)
   net = torch.load(opt.finetune)
 end
 print(net)
@@ -154,7 +155,7 @@ local history = {}
 -- parameters for the optimization
 -- very important: you must only create this table once! 
 -- the optimizer will add fields to this table (such as momentum)
-optimState = {
+local optimState = {
    learningRate = opt.lr,
    beta1 = opt.beta1,
 }
@@ -189,7 +190,20 @@ for epoch = 1,opt.niter do -- for each epoch
   -- save checkpoint
   -- :clearState() compacts the model so it takes less space on disk
   paths.mkdir('checkpoints')
+  print('Saving ' .. opt.name .. '_' .. epoch .. '_net.t7')
   torch.save('checkpoints/' .. opt.name .. '_' .. epoch .. '_net.t7', net:clearState())
   torch.save('checkpoints/' .. opt.name .. '_' .. epoch .. '_optim.t7', optimState)
   torch.save('checkpoints/' .. opt.name .. '_' .. epoch .. '_history.t7', history)
+
+  -- decay the learning rate, if requested
+  if opt.lr_decay > 0 and epoch % opt.lr_decay == 0 then
+    opt.lr = opt.lr / 10
+    print('Decreasing learning rate to ' .. opt.lr)
+
+    -- create new optimState to reset momentum
+    optimState = {
+      learningRate = opt.lr,
+      beta1 = opt.beta1,
+    }
+  end
 end

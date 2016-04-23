@@ -3,6 +3,8 @@ Torch Starter
 
 This is a simple Torch7 starter package. It can be used either as a educational tool or simplified kickoff point for a Torch project.
 
+<img src='http://i.imgur.com/3a5fAAy.png' width='500'>
+
 I pieced together this package largely from [Torch7 resources online](https://github.com/soumith/imagenet-multiGPU.torch). I mostly just copied the code, and stripped a lot of extra functionality out, to make it easier to hack on. 
 
 If something is not clear, or could be made more simple, please let me know. The goal is to be simple.

@@ -19,7 +19,6 @@ local dataset = torch.class('dataLoader')
 
 -- this function reads in the data files
 function dataset:__init(args)
-  print(args)
   for k,v in pairs(args) do self[k] = v end
 
   -- we are going to read args.data_list

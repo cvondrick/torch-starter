@@ -3,20 +3,22 @@ require 'nn'
 require 'optim'
 
 -- to specify these at runtime, you can do, e.g.:
---    $ dataset=simple lr=0.001 th main.lua
+--    $ lr=0.001 th main.lua
 opt = {
   dataset = 'simple',   -- indicates what dataset load to use (in data.lua)
   nThreads = 16,        -- how many threads to pre-fetch data
-  batchSize = 100,      -- self-explanatory
+  batchSize = 256,      -- self-explanatory
   loadSize = 256,       -- when loading images, resize first to this size
   fineSize = 224,       -- crop this size from the loaded image 
   nClasses = 401,       -- number of category
   lr = 0.001,           -- learning rate
   lr_decay = 1,         -- how often to decay learning rate (in epoch's)
   beta1 = 0.5,          -- momentum term for adam
+  meanIter = 0,         -- how many iterations to retrieve for mean estimation
   niter = 100,          -- number of iterations through dataset
   ntrain = math.huge,   -- how big one epoch should be
-  gpu = 1,              -- which GPU to use; consider use CUDA_VISIBLE_DEVICES instead
+  gpu = 1,              -- which GPU to use; consider using CUDA_VISIBLE_DEVICES instead
+  cudnn = 1,            -- whether to use cudnn or not
   finetune = '',        -- if set, will load this network instead of starting from scratch
   name = 'net1',        -- the name of the experiment
   randomize = true,     -- whether to shuffle the data file or not
@@ -95,6 +97,7 @@ else -- load in existing network
   print('loading ' .. opt.finetune)
   net = torch.load(opt.finetune)
 end
+
 print(net)
 
 -- define the loss
@@ -117,6 +120,39 @@ if opt.gpu > 0 then
   criterion:cuda()
 end
 
+-- conver to cudnn if needed
+-- if this errors on you, you can disable, but will be slightly slower
+if opt.gpu > 0 and opt.cudnn > 0 then
+  require 'cudnn'
+  net = cudnn.convert(net, cudnn)
+end
+
+-- estimate the channel-wise mean
+-- if you don't want to do this everytime, set meanIter=0 and
+-- hard code the mean in the next line:
+local mean = {-0.083300798050439,-0.10651495109198,-0.17295466315224}
+if opt.meanIter > 0 then
+  mean = {0,0,0}
+  for i=1,opt.meanIter do
+    print('Estimating mean: ' .. i .. ' / ' .. opt.meanIter)
+    data_im = data:getBatch()
+    for c=1,3 do
+      mean[c] = mean[c] + data_im:select(2,c):mean() 
+    end
+  end
+  for c=1,3 do
+    mean[c] = mean[c] / opt.meanIter
+  end
+end
+print('Mean is:')
+print(mean)
+net.mean = mean
+
+-- subtracts the mean in place
+local function subtractMean(images)
+  for c=1,3 do images[{ {}, c, {}, {} }]:add(-mean[c]) end
+end
+
 -- get a vector of parameters
 local parameters, gradParameters = net:getParameters()
 
@@ -133,6 +169,7 @@ local fx = function(x)
   -- fetch data
   data_tm:reset(); data_tm:resume()
   data_im,data_label = data:getBatch()
+  subtractMean(data_im)
   data_tm:stop()
 
   -- ship data to GPU
@@ -189,8 +226,8 @@ for epoch = 1,opt.niter do -- for each epoch
   
   -- save checkpoint
   -- :clearState() compacts the model so it takes less space on disk
-  paths.mkdir('checkpoints')
   print('Saving ' .. opt.name .. '_' .. epoch .. '_net.t7')
+  paths.mkdir('checkpoints')
   torch.save('checkpoints/' .. opt.name .. '_' .. epoch .. '_net.t7', net:clearState())
   torch.save('checkpoints/' .. opt.name .. '_' .. epoch .. '_optim.t7', optimState)
   torch.save('checkpoints/' .. opt.name .. '_' .. epoch .. '_history.t7', history)

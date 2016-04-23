@@ -11,8 +11,6 @@ opt = {
   name = 'net1',
   epoch = 1,
   ntest = math.huge,
-  display_port = 8000, 
-  display_id = 1, 
   randomize = false,
   data_root = '/data/vision/torralba/commonsense/places-resources/flat/',
   data_list = '/data/vision/torralba/commonsense/places-resources/flat/val_class_shuf.txt'
@@ -37,8 +35,14 @@ local data = DataLoader.new(opt.nThreads, opt.dataset, opt)
 print("Dataset: " .. opt.dataset, " Size: ", data:size())
 
 -- load in network
+print('loading ' .. opt.name .. ' epoch=' .. opt.epoch)
 local net = torch.load('checkpoints/' .. opt.name .. '_' .. opt.epoch .. '_net.t7')
 net:evaluate()
+
+-- subtracts the mean in place
+local function subtractMean(images)
+  for c=1,3 do images[{ {}, c, {}, {} }]:add(-net.mean[c]) end
+end
 
 -- create the data placeholders
 local input = torch.Tensor(opt.batchSize, 3, opt.fineSize, opt.fineSize)
@@ -49,10 +53,6 @@ if opt.gpu > 0 then
   net:cuda()
 end
 
--- show graphics
-disp = require 'display'
-disp.url = 'http://localhost:' .. opt.display_port .. '/events'
-
 -- eval
 local top1 = 0
 local top5 = 0
@@ -62,11 +62,11 @@ for iter = 1, maxiter do
   collectgarbage()
   
   local data_im,data_label = data:getBatch()
+  subtractMean(data_im)
+
   input:copy(data_im)
   local output = net:forward(input)
   local _,preds = output:float():sort(2, true)
-
-  local iscorrect = torch.zeros(opt.batchSize)
 
   for i=1,opt.batchSize do
     local rank = torch.eq(preds[i], data_label[i]):nonzero()[1][1]
@@ -75,16 +75,8 @@ for iter = 1, maxiter do
     end
     if rank <= 5 then
       top5 = top5 + 1
-      iscorrect[i] = 1
     end
   end
-
-  --if iter % 100 == 1 then
-  --  local goods = torch.nonzero(torch.eq(iscorrect, 1))
-  --  local bads  = torch.nonzero(torch.eq(iscorrect, 0))
-  --  disp.image(data_im:index(1, goods), {win=opt.display_id, title=(opt.name .. ' correct')})
-  --  disp.image(data_im:index(1, bads), {win=opt.display_id+1, title=(opt.name .. ' incorrect')})
-  --end
 
   counter = counter + opt.batchSize
   

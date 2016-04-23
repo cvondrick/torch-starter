@@ -39,7 +39,6 @@ function data.new(n, dataset_name, opt_)
                                 print(string.format('Starting donkey with id: %d seed: %d', tid, seed))
                                 assert(options, 'options not found')
                                 assert(opt, 'opt not given')
-                                print(opt)
                                 paths.dofile(donkey_file)
                              end
       )

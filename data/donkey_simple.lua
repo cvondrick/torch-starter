@@ -110,14 +110,29 @@ function dataset:trainHook(path)
    -- do random crop
    local oW = self.fineSize
    local oH = self.fineSize 
-   local h1 = math.ceil(torch.uniform(1e-2, iH-oH))
-   local w1 = math.ceil(torch.uniform(1e-2, iW-oW))
+   local h1
+   local w1
+   if self.cropping == 'random' then
+     h1 = math.ceil(torch.uniform(1e-2, iH-oH))
+     w1 = math.ceil(torch.uniform(1e-2, iW-oW))
+   elseif self.cropping == 'center' then
+     h1 = math.ceil((iW-oW)/2)
+     w1 = math.ceil((iH-oH)/2)
+   else
+     assert(false, 'unknown mode ' .. self.cropping)
+   end
    local out = image.crop(input, w1, h1, w1 + oW, h1 + oH)
    assert(out:size(2) == oW)
    assert(out:size(3) == oH)
    -- do hflip with probability 0.5
    if torch.uniform() > 0.5 then out = image.hflip(out); end
    out:mul(2):add(-1) -- make it [0, 1] -> [-1, 1]
+
+    -- subtract mean
+    for c=1,3 do
+      out[{ c, {}, {} }]:add(-self.mean[c])
+    end
+
    return out
 end
 
@@ -139,6 +154,7 @@ function dataset:loadImage(path)
         input = image.scale(input, opt.loadSize * iW / iH, opt.loadSize) 
     end
   end
+
   return input
 end
 

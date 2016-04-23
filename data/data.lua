@@ -13,11 +13,7 @@ function data.new(n, dataset_name, opt_)
       self[k] = v
    end
 
-   if opt_.randomize == nil then
-     self.randomize = true
-   else
-     self.randomize = opt_.randomize
-   end
+   self.randomize = opt_.randomize
 
    local donkey_file
    if dataset_name == 'simple' then
@@ -67,7 +63,7 @@ end
 function data:queueJob()
   self.jobCount = self.jobCount + 1
 
-  if self.randomize then
+  if self.randomize > 0 then
     self.threads:addjob(function()
                           return trainLoader:sample(opt.batchSize)
                         end,

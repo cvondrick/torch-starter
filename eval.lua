@@ -8,12 +8,14 @@ opt = {
   loadSize = 256,
   fineSize = 224,
   gpu = 1,
-  name = 'net1',
-  epoch = 1,
+  cudnn = 1,
+  model = '',
   ntest = math.huge,
-  randomize = false,
+  randomize = 0,
+  cropping = 'center',
   data_root = '/data/vision/torralba/commonsense/places-resources/flat/',
-  data_list = '/data/vision/torralba/commonsense/places-resources/flat/val_class_shuf.txt'
+  data_list = '/data/vision/torralba/commonsense/places-resources/flat/val_class_shuf.txt',
+  mean = {-0.083300798050439,-0.10651495109198,-0.17295466315224}
 }
 
 -- one-line argument parser. parses enviroment variables to override the defaults
@@ -28,6 +30,9 @@ if opt.gpu > 0 then
   require 'cunn'
   cutorch.setDevice(opt.gpu)
 end
+if opt.gpu > 0 and opt.cudnn > 0 then
+  require 'cudnn'
+end
 
 -- create data loader
 local DataLoader = paths.dofile('data/data.lua')
@@ -35,14 +40,10 @@ local data = DataLoader.new(opt.nThreads, opt.dataset, opt)
 print("Dataset: " .. opt.dataset, " Size: ", data:size())
 
 -- load in network
-print('loading ' .. opt.name .. ' epoch=' .. opt.epoch)
-local net = torch.load('checkpoints/' .. opt.name .. '_' .. opt.epoch .. '_net.t7')
+assert(opt.model ~= '', 'no model specified')
+print('loading ' .. opt.model)
+local net = torch.load(opt.model)
 net:evaluate()
-
--- subtracts the mean in place
-local function subtractMean(images)
-  for c=1,3 do images[{ {}, c, {}, {} }]:add(-net.mean[c]) end
-end
 
 -- create the data placeholders
 local input = torch.Tensor(opt.batchSize, 3, opt.fineSize, opt.fineSize)
@@ -62,7 +63,6 @@ for iter = 1, maxiter do
   collectgarbage()
   
   local data_im,data_label = data:getBatch()
-  subtractMean(data_im)
 
   input:copy(data_im)
   local output = net:forward(input)
@@ -81,6 +81,6 @@ for iter = 1, maxiter do
   counter = counter + opt.batchSize
   
   print(('%s: Eval [%8d / %8d]:\t Top1: %.4f  Top5: %.4f'):format(
-    opt.name, iter, maxiter,
+    opt.model, iter, maxiter,
     top1/counter, top5/counter))
 end

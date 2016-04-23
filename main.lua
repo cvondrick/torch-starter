@@ -6,26 +6,29 @@ require 'optim'
 --    $ lr=0.001 th main.lua
 opt = {
   dataset = 'simple',   -- indicates what dataset load to use (in data.lua)
-  nThreads = 16,        -- how many threads to pre-fetch data
+  nThreads = 32,        -- how many threads to pre-fetch data
   batchSize = 256,      -- self-explanatory
   loadSize = 256,       -- when loading images, resize first to this size
   fineSize = 224,       -- crop this size from the loaded image 
   nClasses = 401,       -- number of category
   lr = 0.001,           -- learning rate
   lr_decay = 1,         -- how often to decay learning rate (in epoch's)
-  beta1 = 0.5,          -- momentum term for adam
+  beta1 = 0.9,          -- momentum term for adam
   meanIter = 0,         -- how many iterations to retrieve for mean estimation
+  saveIter = 10000,    -- write check point on this interval
   niter = 100,          -- number of iterations through dataset
   ntrain = math.huge,   -- how big one epoch should be
   gpu = 1,              -- which GPU to use; consider using CUDA_VISIBLE_DEVICES instead
   cudnn = 1,            -- whether to use cudnn or not
   finetune = '',        -- if set, will load this network instead of starting from scratch
   name = 'net1',        -- the name of the experiment
-  randomize = true,     -- whether to shuffle the data file or not
+  randomize = 1,        -- whether to shuffle the data file or not
+  cropping = 'random',  -- options for data augmentation
   display_port = 8000,  -- port to push graphs
   display_id = 1,       -- window ID when pushing graphs
   data_root = '/data/vision/torralba/commonsense/places-resources/flat/',
-  data_list = '/data/vision/torralba/commonsense/places-resources/flat/train_class.txt'
+  data_list = '/data/vision/torralba/commonsense/places-resources/flat/train_class.txt',
+  mean = {-0.083300798050439,-0.10651495109198,-0.17295466315224},
 }
 
 -- one-line argument parser. parses enviroment variables to override the defaults
@@ -127,32 +130,6 @@ if opt.gpu > 0 and opt.cudnn > 0 then
   net = cudnn.convert(net, cudnn)
 end
 
--- estimate the channel-wise mean
--- if you don't want to do this everytime, set meanIter=0 and
--- hard code the mean in the next line:
-local mean = {-0.083300798050439,-0.10651495109198,-0.17295466315224}
-if opt.meanIter > 0 then
-  mean = {0,0,0}
-  for i=1,opt.meanIter do
-    print('Estimating mean: ' .. i .. ' / ' .. opt.meanIter)
-    data_im = data:getBatch()
-    for c=1,3 do
-      mean[c] = mean[c] + data_im:select(2,c):mean() 
-    end
-  end
-  for c=1,3 do
-    mean[c] = mean[c] / opt.meanIter
-  end
-end
-print('Mean is:')
-print(mean)
-net.mean = mean
-
--- subtracts the mean in place
-local function subtractMean(images)
-  for c=1,3 do images[{ {}, c, {}, {} }]:add(-mean[c]) end
-end
-
 -- get a vector of parameters
 local parameters, gradParameters = net:getParameters()
 
@@ -169,7 +146,6 @@ local fx = function(x)
   -- fetch data
   data_tm:reset(); data_tm:resume()
   data_im,data_label = data:getBatch()
-  subtractMean(data_im)
   data_tm:stop()
 
   -- ship data to GPU
@@ -222,16 +198,19 @@ for epoch = 1,opt.niter do -- for each epoch
             math.floor(math.min(data:size(), opt.ntrain) / opt.batchSize),
             tm:time().real, data_tm:time().real,
             err and err or -1))
+
+    -- save checkpoint
+    -- :clearState() compacts the model so it takes less space on disk
+    if counter % opt.saveIter == 0 then
+      print('Saving ' .. opt.name .. '/iter' .. counter .. '_net.t7')
+      paths.mkdir('checkpoints')
+      paths.mkdir('checkpoints/' .. opt.name)
+      torch.save('checkpoints/' .. opt.name .. '/iter' .. counter .. '_net.t7', net:clearState())
+      torch.save('checkpoints/' .. opt.name .. '/iter' .. counter .. '_optim.t7', optimState)
+      torch.save('checkpoints/' .. opt.name .. '/iter' .. counter .. '_history.t7', history)
+    end
   end
   
-  -- save checkpoint
-  -- :clearState() compacts the model so it takes less space on disk
-  print('Saving ' .. opt.name .. '_' .. epoch .. '_net.t7')
-  paths.mkdir('checkpoints')
-  torch.save('checkpoints/' .. opt.name .. '_' .. epoch .. '_net.t7', net:clearState())
-  torch.save('checkpoints/' .. opt.name .. '_' .. epoch .. '_optim.t7', optimState)
-  torch.save('checkpoints/' .. opt.name .. '_' .. epoch .. '_history.t7', history)
-
   -- decay the learning rate, if requested
   if opt.lr_decay > 0 and epoch % opt.lr_decay == 0 then
     opt.lr = opt.lr / 10

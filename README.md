@@ -15,6 +15,7 @@ Installation
 Installation is fairly simple. You need to install:
 - [Torch7](http://torch.ch/docs/getting-started.html#_)
 - [cunn](https://github.com/torch/cunn) for training on GPU
+- [cudnn](https://github.com/soumith/cudnn.torch) for faster training on GPU
 - [tds](https://github.com/torch/tds) for some data structures
 - [display](https://github.com/szym/display) for graphs 
 
@@ -27,8 +28,16 @@ cd ~/torch; bash install-deps;
 
 # install libraries
 luarocks install cunn
+luarocks install cudnn
 luarocks install tds
 luarocks install https://raw.githubusercontent.com/szym/display/master/display-scm-0.rockspec
+```
+
+### CSAIL Notes
+If you are at CSAIL, you can use my Torch installation:
+```bash
+. /data/vision/torralba/commonsense/torch/distro/install/bin/torch-activate
+export LD_LIBRARY_PATH=/data/vision/torralba/commonsense/cudnnv4/cuda/lib64:$LD_LIBRARY_PATH
 ```
 
 ### Learning Resources

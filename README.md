@@ -14,9 +14,9 @@ Installation
 
 Installation is fairly simple. You need to install:
 - [Torch7](http://torch.ch/docs/getting-started.html#_)
-- [cunn](https://github.com/torch/cunn)
-- [tds](https://github.com/torch/tds)
-- [display](https://github.com/szym/display) (optional)
+- [cunn](https://github.com/torch/cunn) for training on GPU
+- [tds](https://github.com/torch/tds) for some data structures
+- [display](https://github.com/szym/display) for graphs 
 
 You can install all of these with the commands:
 ```bash
@@ -34,6 +34,19 @@ luarocks install https://raw.githubusercontent.com/szym/display/master/display-s
 ### Learning Resources
 - [Torch Cheat Sheet](https://github.com/torch/torch7/wiki/Cheatsheet)
 - [60 minute blitz](https://github.com/soumith/cvpr2015/blob/master/Deep%20Learning%20with%20Torch.ipynb)
+
+Model
+-----
+I trained an AlexNet-esque network on [Places2](http://places2.csail.mit.edu/)
+with this code, which you can [download here](http://mit.edu/vondrick/torch-starter/pretrained.zip). This model obtains
+40% top-1 accuracy on the validation set with 10-crops per image after 2 epochs.
+
+If you use this model, please cite the Places2 paper (of which I am not
+affiliated).  Note this model is slightly different from the AlexNet in Caffe.
+Notable differences: slightly less filters in conv1 and conv2, no groups, no
+spatial normalization, batch normalizaiton, trained with Adam instead of SGD,
+and sampling with replacement. It is unclear to me whether these changes have a
+significant impact on performance. 
 
 Data Setup 
 ----------

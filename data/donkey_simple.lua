@@ -116,8 +116,8 @@ function dataset:trainHook(path)
      h1 = math.ceil(torch.uniform(1e-2, iH-oH))
      w1 = math.ceil(torch.uniform(1e-2, iW-oW))
    elseif self.cropping == 'center' then
-     h1 = math.ceil((iW-oW)/2)
-     w1 = math.ceil((iH-oH)/2)
+     h1 = math.ceil((iH-oH)/2)
+     w1 = math.ceil((iW-oW)/2)
    else
      assert(false, 'unknown mode ' .. self.cropping)
    end

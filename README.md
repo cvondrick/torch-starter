@@ -48,7 +48,7 @@ Model
 -----
 I trained an AlexNet-esque network on [Places2](http://places2.csail.mit.edu/)
 with this code, which you can [download here](http://mit.edu/vondrick/torch-starter/pretrained.zip). This model obtains
-40% top-1 accuracy on the validation set with 10-crops per image after 2 epochs.
+40% top-1 accuracy on the validation set with 10-crops per image after 2 epochs. (Note: Places2 is no more! The new dataset is Places365, so these numbers are no longer comparable.)
 
 If you use this model, please cite the Places2 paper (of which I am not
 affiliated).  Note this model is slightly different from the AlexNet in Caffe.

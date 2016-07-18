@@ -197,7 +197,7 @@ for epoch = 1,opt.niter do -- for each epoch
             opt.name, epoch, ((i-1) / opt.batchSize),
             math.floor(math.min(data:size(), opt.ntrain) / opt.batchSize),
             tm:time().real, data_tm:time().real,
-            err and err or -1))
+            err))
 
     -- save checkpoint
     -- :clearState() compacts the model so it takes less space on disk
@@ -206,7 +206,7 @@ for epoch = 1,opt.niter do -- for each epoch
       paths.mkdir('checkpoints')
       paths.mkdir('checkpoints/' .. opt.name)
       torch.save('checkpoints/' .. opt.name .. '/iter' .. counter .. '_net.t7', net:clearState())
-      torch.save('checkpoints/' .. opt.name .. '/iter' .. counter .. '_optim.t7', optimState)
+      --torch.save('checkpoints/' .. opt.name .. '/iter' .. counter .. '_optim.t7', optimState)
       torch.save('checkpoints/' .. opt.name .. '/iter' .. counter .. '_history.t7', history)
     end
   end

@@ -1,7 +1,7 @@
 Torch Starter
 =============
 
-This is a simple Torch7 starter package. It can be used either as a educational tool or simplified kickoff point for a Torch project.
+This is a simple Torch7 starter package. It can be used either as a simplified kickoff point for a Torch project.
 
 <img src='http://i.imgur.com/3a5fAAy.png' width='500'>
 
@@ -12,7 +12,13 @@ If something is not clear, or could be made more simple, please let me know. The
 Installation
 ------------
 
-Installation is fairly simple. You need to install:
+If you are at CSAIL, you can use my Torch installation:
+```bash
+. /data/vision/torralba/commonsense/torch/distro/install/bin/torch-activate
+export LD_LIBRARY_PATH=/data/vision/torralba/commonsense/cudnnv5/cuda/lib64:$LD_LIBRARY_PATH
+```
+
+Otherwise, installation is fairly simple. You need to install:
 - [Torch7](http://torch.ch/docs/getting-started.html#_)
 - [cunn](https://github.com/torch/cunn) for training on GPU
 - [cudnn](https://github.com/soumith/cudnn.torch) for faster training on GPU
@@ -31,13 +37,6 @@ luarocks install cunn
 luarocks install cudnn
 luarocks install tds
 luarocks install https://raw.githubusercontent.com/szym/display/master/display-scm-0.rockspec
-```
-
-### CSAIL Notes
-If you are at CSAIL, you can use my Torch installation:
-```bash
-. /data/vision/torralba/commonsense/torch/distro/install/bin/torch-activate
-export LD_LIBRARY_PATH=/data/vision/torralba/commonsense/cudnnv5/cuda/lib64:$LD_LIBRARY_PATH
 ```
 
 ### Learning Resources
@@ -77,7 +76,7 @@ Training
 --------
 Define your model in the `net` variable. By default, it is AlexNet. To learn more about the modules you can use, see [nn](https://github.com/torch/nn/blob/master/README.md). You can also adjust your loss with the `criterion` variable. 
 
-Remember to also adjust any options in `opt`, such as the learning rate and the number of classes.
+Remember to also adjust any options in `opt`, such as the learning rate and the number of classes. Setting these hyperparameters is a bit of an art, but generally it is recommended to use a learning rate of `0.001` and batch size of at least `64`, but `128` or `256` may be better if you have the memory. For a systematic study, see [this paper](https://arxiv.org/pdf/1606.02228v2.pdf).
 
 Finally, to start training, just do:
 
@@ -93,8 +92,8 @@ Evaluation
 ----------
 To evaluate your model, you can use the `eval.lua` script. It mostly follows the same format as `main.lua`. It reads your validation/testing dataset from a file similar to before, and sequentially runs through it, calculating both the top-1 and top-5 accuracy. 
 
-MIT CSAIL Notes
-----------------
+Graphics, Logs
+--------------
 If you want to see graphics and the loss over time, in a different shell on the same machine, run this command:
 ```bash
 $ th -ldisplay.start 8000 0.0.0.0

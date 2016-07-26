@@ -1,7 +1,7 @@
 Torch Starter
 =============
 
-This is a simple Torch7 starter package. It can be used either as a simplified kickoff point for a Torch project.
+This is a simple Torch7 starter package. It can be used  as a simplified kickoff point for a Torch project.
 
 <img src='http://i.imgur.com/3a5fAAy.png' width='500'>
 

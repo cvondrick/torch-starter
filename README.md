@@ -14,7 +14,7 @@ Installation
 
 If you are at CSAIL, you can use my Torch installation:
 ```bash
-. /data/vision/torralba/commonsense/torch/distro/install/bin/torch-activate
+. /data/vision/torralba/commonsense/torch/install/bin/torch-activate
 export LD_LIBRARY_PATH=/data/vision/torralba/commonsense/cudnnv5/cuda/lib64:$LD_LIBRARY_PATH
 ```
 

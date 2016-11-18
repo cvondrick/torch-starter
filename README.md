@@ -45,13 +45,13 @@ luarocks install https://raw.githubusercontent.com/szym/display/master/display-s
 
 Model
 -----
-I trained an AlexNet-esque network on [Places2](http://places2.csail.mit.edu/)
+I trained an AlexNet-esque network on [Places365](http://places2.csail.mit.edu/)
 with this code, which you can [download here](http://mit.edu/vondrick/torch-starter/pretrained.zip). This model obtains
-40% top-1 accuracy on the validation set with 10-crops per image after 2 epochs. (Note: Places2 is no more! The new dataset is Places365, so these numbers are no longer comparable.)
+50% top-1 accuracy on the validation set. This is slightly worse than the published result because we didn't do averaging over 10 crops.
 
 If you use this model, please cite the Places2 paper (of which I am not
 affiliated).  Note this model is slightly different from the AlexNet in Caffe.
-Notable differences: slightly less filters in conv1 and conv2, no groups, no
+Notable differences: no groups in the convolutions, no
 spatial normalization, batch normalizaiton, trained with Adam instead of SGD,
 and sampling with replacement. It is unclear to me whether these changes have a
 significant impact on performance. 

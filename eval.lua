@@ -9,12 +9,12 @@ opt = {
   fineSize = 224,
   gpu = 1,
   cudnn = 1,
-  model = '',
+  model = 'checkpoints/main/iter100000_net.t7',
   ntest = math.huge,
   randomize = 0,
   cropping = 'center',
-  data_root = '/data/vision/torralba/commonsense/places-resources/flat/',
-  data_list = '/data/vision/torralba/commonsense/places-resources/flat/val_class_shuf.txt',
+  data_root = '/data/vision/torralba/deepscene/places365_standard/',
+  data_list = '/data/vision/torralba/commonsense/places-resources/places365/val.txt',
   mean = {-0.083300798050439,-0.10651495109198,-0.17295466315224}
 }
 
